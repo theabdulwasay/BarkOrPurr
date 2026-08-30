@@ -218,3 +218,7 @@ Feel free to check the [issues page](https://github.com/your-username/BarkOrPurr
 ## 📜 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+<img width="1903" height="864" alt="image" src="https://github.com/user-attachments/assets/463a25da-c1d3-4c50-9614-22c5340093b9" />
+<img width="1908" height="867" alt="image" src="https://github.com/user-attachments/assets/6048d19b-a7a8-4531-9290-0480295387fc" />
+

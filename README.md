@@ -1,160 +1,220 @@
-# BarkOrPurr — Pet Image Classifier
+# 🐶 BarkOrPurr — Dog vs. Cat Image Classifier
 
-BarkOrPurr is a polished, beginner-friendly PyTorch project that classifies images as dogs or cats. It uses transfer learning with `resnet18`, provides a reproducible training pipeline, evaluation utilities (confusion matrix / classification report), and a small Flask web UI + JSON API for on-demand predictions.
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.0%2B-000000.svg)](https://flask.palletsprojects.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Key goals:
-- Simple, well-documented starter suitable for learning and demoing transfer learning.
-- End-to-end flow: prepare dataset → train → evaluate → serve predictions.
-- Lightweight UI for quick manual testing and prototyping.
+**BarkOrPurr** is a complete, production-grade Deep Learning workflow built with **PyTorch** and **ResNet-18** transfer learning. It classifies images into two categories (Cats 🐱 vs Dogs 🐶) and features an end-to-end pipeline: dataset preparation, fine-tuning, metric evaluation (Accuracy, Confusion Matrix, Classification Report), single-image CLI inference, and an interactive **Flask Web UI** + **REST API**.
 
---
+---
 
-## Features
+## 🌟 Key Features
 
-- Transfer learning via `torchvision.models.resnet18` (replace final `fc` layer).
-- ImageFolder-based data pipeline with configurable transforms (`src/data.py`).
-- Training script with progress logging, checkpointing (`models/best.pth`, `models/last.pth`) and plotting (`models/loss.png`).
-- Evaluation helpers to compute confusion matrix and classification report (sklearn).
-- Flask web UI (`web/app.py`) with a beautiful frontend and `/api/predict` for integration.
+- **Transfer Learning Architecture**: Utilizes pre-trained `ResNet-18` with custom classification head for fast convergence and high accuracy.
+- **Dataset Preparation Utilities**: Automated train/val dataset split helper (`scripts/split_dataset.py`).
+- **Configurable Training Pipeline**: Dynamic batching, learning rate control, fine-tuning toggles, auto compute-device detection (CUDA/CPU), and loss curve rendering.
+- **Comprehensive Evaluation**: Metric reporting with Precision, Recall, F1-Score, and automated heatmap rendering for Confusion Matrices.
+- **Dual Inference Interfaces**:
+  - **CLI**: Fast single-image classification.
+  - **Web App / REST API**: Modern Flask UI with real-time preview and `/api/predict` JSON endpoint.
 
---
+---
 
-## Quick Start (Windows)
+## 📁 Repository Structure
 
-1. Open a PowerShell terminal and set your working directory to the project root:
-
-```powershell
-cd "C:\Users\MuhammadIbrarDyChief\Downloads\Deep Learning Project"
+```text
+Deep Learning Project/
+├── Dataset/                   # Raw or downloaded datasets
+│   ├── train_set/
+│   └── test_set/
+├── data/                      # Processed ImageFolder dataset layout
+│   ├── train/                 # Training samples (cats/, dogs/)
+│   └── val/                   # Validation samples (cats/, dogs/)
+├── models/                    # Saved checkpoints & evaluation plots
+│   ├── best.pth               # Model weights with highest val accuracy
+│   ├── last.pth               # Final epoch checkpoint
+│   ├── loss.png               # Training/Validation loss & accuracy curves
+│   └── confusion_matrix.png   # Confusion Matrix plot
+├── scripts/                   # Utility scripts
+│   └── split_dataset.py       # Auto-split raw images into train/val folders
+├── src/                       # Core machine learning source code
+│   ├── data.py                # PyTorch DataLoaders & image transformations
+│   ├── model.py               # ResNet-18 architecture initialization
+│   ├── train.py               # Training loop with validation logging
+│   ├── evaluate.py            # Model evaluation & confusion matrix generator
+│   ├── predict.py             # Single-image CLI prediction helper
+│   └── utils.py               # Metric visualization & helper utilities
+├── web/                       # Web application & REST service
+│   ├── app.py                 # Flask server backend
+│   ├── static/                # CSS, JavaScript, and UI assets
+│   └── templates/             # HTML templates (Jinja2)
+├── requirements.txt           # Python dependencies
+└── README.md                  # Project documentation
 ```
 
-2. Create and activate a virtual environment, then install dependencies:
+---
 
+## 🚀 Quick Start Guide
+
+### 1. Environment Setup
+
+Clone the repository and navigate to the project directory:
+
+```bash
+git clone https://github.com/your-username/BarkOrPurr.git
+cd BarkOrPurr
+```
+
+Create a virtual environment and install the required dependencies:
+
+**On Windows (PowerShell):**
 ```powershell
 python -m venv venv
-venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-3. Prepare your dataset in ImageFolder layout (example):
-
+**On macOS / Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
+
+---
+
+### 2. Dataset Preparation
+
+Organize your dataset into standard PyTorch `ImageFolder` structure (`cats` and `dogs` subdirectories):
+
+```text
 data/
-	train/
-		cats/
-		dogs/
-	val/
-		cats/
-		dogs/
+├── train/
+│   ├── cats/
+│   └── dogs/
+└── val/
+    ├── cats/
+    └── dogs/
 ```
 
-You can use the helper script to split a raw folder of images:
+If you have raw images in a single folder, run the dataset split script:
 
-```powershell
-python scripts/split_dataset.py --src "data/original" --dst data --val-frac 0.2 --seed 42
+```bash
+python scripts/split_dataset.py --src "Dataset/raw_images" --dst "data" --val-frac 0.2 --seed 42
 ```
 
-4. Run a quick smoke-training (1 epoch) to verify everything works:
+---
 
-```powershell
-python src/train.py --data-dir data --epochs 1 --batch-size 32
+### 3. Model Training
+
+Train the `ResNet-18` classification model:
+
+```bash
+python src/train.py --data-dir data --epochs 10 --batch-size 32 --lr 0.001
 ```
 
---
+**Optional Training Arguments:**
+- `--fine-tune`: Unfreeze all ResNet layers for end-to-end fine-tuning.
+- `--device`: Specify computation device (`cuda` or `cpu`).
+- `--output-dir`: Set checkpoint save directory (default: `models`).
 
-## Training (recommended)
+Upon completion, weights and metric curves will be automatically saved to `models/`:
+- `models/best.pth`
+- `models/last.pth`
+- `models/loss.png`
 
-Train longer for better accuracy. Example:
+---
 
-```powershell
-python src/train.py --data-dir data --epochs 10 --batch-size 32 --lr 1e-3
+### 4. Model Evaluation
+
+Compute overall validation accuracy, print detailed classification reports (Precision, Recall, F1-Score), and generate a confusion matrix heatmap:
+
+```bash
+python src/evaluate.py --data-dir data --checkpoint models/best.pth
 ```
 
-Outputs saved to `models/`:
-- `best.pth` — checkpoint with best validation accuracy
-- `last.pth` — final checkpoint
-- `loss.png` — training/validation loss plot
+*Output visualization will be saved to `models/confusion_matrix.png`.*
 
-Notes:
-- The code auto-detects CUDA if available. On CPU, ignore any `pin_memory` warnings.
+---
 
---
+### 5. Single Image Prediction (CLI)
 
-## Evaluation & Confusion Matrix
+Perform quick command-line inference on any single image:
 
-Use the model to evaluate the validation set and produce a confusion matrix and classification report. The project includes `src/predict.py` to load the model and predict single images — you can adapt it to loop over `torchvision.datasets.ImageFolder` and compute metrics with `sklearn.metrics`.
-
-Suggested script (concept):
-
-```python
-from torchvision import datasets
-from src.predict import load_model, predict_image_bytes
-from sklearn.metrics import confusion_matrix, classification_report
-
-model, CLASSES = load_model('models/best.pth')
-val_ds = datasets.ImageFolder('data/val', transform=...)
-# loop, collect y_true/y_pred, then compute and save confusion matrix image
+```bash
+python src/predict.py --image path/to/sample_image.jpg --checkpoint models/best.pth
 ```
 
-If you want, I can add a ready-to-run `src/evaluate.py` that produces `models/confusion_matrix.png` and prints a classification report.
+---
 
---
+### 6. Web UI & REST API Service
 
-## Web UI & JSON API
+Launch the Flask web application:
 
-Start the Flask app from the project root:
-
-```powershell
+```bash
 python web/app.py
 ```
 
-Open the UI: http://127.0.0.1:5000/
+Access the interactive web application in your browser at:
+**`http://127.0.0.1:5000`**
 
-API endpoint:
-- `POST /api/predict` — multipart form field `file`; returns JSON `{ "label": "cats|dogs", "prob": 0.997 }`.
+#### REST API Usage
 
-Example `curl` call:
+Submit an image via `POST` multipart form data to get JSON prediction results:
 
-```powershell
-curl -F "file=@data/val/cats/cat.1.jpg" http://127.0.0.1:5000/api/predict
+**Using cURL:**
+```bash
+curl -X POST -F "file=@data/val/cats/cat.4001.jpg" http://127.0.0.1:5000/api/predict
 ```
 
-Troubleshooting:
-- If you see `ModuleNotFoundError: No module named 'src'`, ensure you run the app from the project root (`python web/app.py`). `web/app.py` already adds the root to `sys.path` but the working directory matters for asset loading.
-- If `ERR_CONNECTION_REFUSED`, make sure the Flask server is running and port 5000 is free.
+**Response Example:**
+```json
+{
+  "success": true,
+  "label": "cats",
+  "confidence": 0.9984
+}
+```
 
---
+**Using Python `requests`:**
+```python
+import requests
 
-## Frontend
+url = "http://127.0.0.1:5000/api/predict"
+with open("sample.jpg", "rb") as img:
+    response = requests.post(url, files={"file": img})
+print(response.json())
+```
 
-The UI uses Bootstrap and custom CSS/JS located in `web/static/` and a Jinja2 template at `web/templates/index.html`. Features include image preview, a scenic cat/dog background toggle, and an API button that returns JSON predictions without page reload.
+---
 
---
+## 🛠️ Built With
 
-## Deployment & Docker (optional)
+- **[PyTorch](https://pytorch.org/)** — Deep learning framework
+- **[Torchvision](https://pytorch.org/vision/stable/index.html)** — Computer vision models & transforms
+- **[Flask](https://flask.palletsprojects.com/)** — Web framework & REST API server
+- **[Scikit-Learn](https://scikit-learn.org/)** — Evaluation metrics & classification reporting
+- **[Matplotlib](https://matplotlib.org/)** — Loss curve & confusion matrix plotting
+- **[Bootstrap 5](https://getbootstrap.com/)** — Web UI layout styling
 
-I can add a `Dockerfile` if you want to containerize the app. Minimal approach: create a small image that installs Python, copies the repo, installs `requirements.txt`, and runs `web/app.py` via `gunicorn` or Flask for development.
+---
 
---
+## 🤝 Contributing
 
-## Contributing
+Contributions, issues, and feature requests are welcome!  
+Feel free to check the [issues page](https://github.com/your-username/BarkOrPurr/issues).
 
-Contributions welcome — good first tasks:
-- Add `src/evaluate.py` to compute and save confusion matrix + classification report.
-- Add model export (TorchScript/ONNX) for faster inference.
-- Improve frontend styling or add feedback UI for batch uploads.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git checkout -b feature/AmazingFeature`)
+5. Open a Pull Request
 
-When contributing, open a PR and include a short description and screenshots (if UI changes).
+---
 
---
+## 📜 License
 
-## License
-
-This project is provided for learning/demo purposes. Use freely for non-commercial experimentation. If you want a specific license, tell me and I'll add one (MIT recommended for open-source demos).
-
---
-
-If you want, I will:
-- add `src/evaluate.py` now and run it, or
-- create a `Dockerfile` and `docker-compose.yml` for quick deployment.
-Which should I do next?
+Distributed under the MIT License. See `LICENSE` for more information.
